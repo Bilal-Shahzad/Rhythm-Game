@@ -4,11 +4,11 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="A rhythm game for you to play!">
-        <meta name="keywords" content="project, co-op, build, site, zach, self">
-        <meta name="author" content="Zachary Chan">
+        <meta name="keywords" content="project, co-op, build, site, bilal, self">
+        <meta name="author" content="Bilal Shahzad">
         <link rel="icon" type="image/x-icon" href="./icon.ico">
         <link rel="stylesheet" href="style.css">
-        <title>Zachary Chan | Rhythm Game</title>
+        <title>Bilal Shahzad | Rhythm Game</title>
     </head>
     <body>
         <div id="game-area">
@@ -41,6 +41,20 @@
                 <span id="misses-stat">
                     Misses: <div id="misses">0</div>
                 </span>
+            </div>
+
+            <div id="options">
+                <h2>Options</h2>
+                <div id="options-list">
+                    <div id="songvolume">
+                        Song Volume: <div id="song-volume-value">100</div>
+                        <input type="range" min="1" max="100" value="70" class="slider" id="song-volume">
+                    </div>
+                    <div id="sfxvolume">
+                        SFX Volume: <div id="sfx-volume-value">100</div>
+                        <input type="range" min="1" max="100" value="70" class="slider" id="sfx-volume">
+                    </div>
+                </div>
             </div>
         </div>
         <iframe title="" id="map" src="./map.txt" style="display: none;"></iframe>
