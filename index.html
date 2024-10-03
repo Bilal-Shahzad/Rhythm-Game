@@ -2,34 +2,79 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
+        <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-EJ4J9G467E"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EJ4J9G467E');
+        </script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="A rhythm game for you to play!">
-        <meta name="keywords" content="project, co-op, build, site, bilal, self">
+        <meta name="keywords" content="project, co-op, site, bilal, rhythm, music, wow, beat">
         <meta name="author" content="Bilal Shahzad">
         <link rel="icon" type="image/x-icon" href="./icon.ico">
-        <link rel="stylesheet" href="style.css">
-        <title>Bilal Shahzad | Rhythm Game</title>
+        <link rel="stylesheet" href="styles.css">
+        <title> Bilal Shahzad | Rhythm Game</title>
+
     </head>
     <body>
+        <div class="modal">
+            <div class="modal-content">
+                <span class="close-button" tabindex="0">&times;</span>
+                <h1>Hello!👋</h1>
+                <p>
+                    Welcome to my rhythm game!
+                    This is a project I've been working on for a while.
+                    Unfortunately for the mobile users, this game is not playable for mobile devices!
+                </p>
+                <h2>How To Play: </h2>
+                <p>
+                    - Tap corresponding keys on your keyboard to the beat of the music
+                </p>
+                <p>
+                    - Keybinds are labeled on the keys themselves. Labels will be hidden when the game starts.
+                </p>
+                <p>
+                    - Get more points for hitting notes closer to the center of the keys
+                </p>
+                <p>
+                    <strong>If you have epilepsy or are sensitive to flashing lights, I HIGHLY RECOMMEND disabling the visual effects in the options panel.</strong>
+                </p>
+
+                <h2> Code: </h2>
+                Written by yours truly, Bilal.
+                <a href="https://github.com/Bilal-Shahzad/Rhythm-Game">GitHub</a>
+            </div>
+        </div>
+
         <div id="game-area">
-            <div class="d" style="filter: brightness(100%); transform: scale(1.0);"> </div>
-            <div class="f" style="filter: brightness(100%); transform: scale(1.0);"> </div>
-            <div class="j" style="filter: brightness(100%); transform: scale(1.0);"> </div>
-            <div class="k" style="filter: brightness(100%); transform: scale(1.0);"> </div>
+            <div id="hit-timing"></div>
             <div class="d" style="filter: brightness(100%); transform: scale(1.0);"> D </div>
             <div class="f" style="filter: brightness(100%); transform: scale(1.0);"> F </div>
             <div class="j" style="filter: brightness(100%); transform: scale(1.0);"> J </div>
             <div class="k" style="filter: brightness(100%); transform: scale(1.0);"> K </div>
         </div>
         <div id="side-panel">
-            <h1>Generic 4K Rhythm Game</h1>
+            <h1>
+                4K Rhythm Game
+            </h1>
+
             <button id="play" onclick="start()" style="display:block"> Play </button>
+            <button class="htp-trigger">How to Play</button>
+            <button id="retry" onclick="retry()" style="display:none"> Retry </button>
+            <button id="stop" onclick="stop()" style="display:none"> Stop </button>
+
+            <div id="warning">
+                <img alt="Warning!!!" src="warning" height="100" weight="100">
+                <p>Warning: Your device may be too small for a proper experience!</p>
+            </div>
             <div id="game-stats">
                 Score: <div id="score">0</div>
                 <br>
                 Combo: <div id="combo">0</div>
                 <br>
-                Accuracy: <div id="accuracy">0</div>%
+                Accuracy: <div id="accuracy">00.00</div>%
                 <br>
             </div>
             <div id="hit-stats">
@@ -53,23 +98,60 @@
                     Misses: <div id="misses">0</div>
                 </span>
             </div>
-            <div id="options">
+
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'song-select')" id="defaultOpen">Song Select</button>
+                <button class="tablinks" onclick="openTab(event, 'options')">Options</button>
+            </div>
+
+            <div id="song-select" class="tabcontent">
+                <h2>Song Select</h2>
+
+                <div id="song-select-window">
+                    <button class= "song-option" onclick="loadLevel('goldenWind-med')">Il Vento D'oro - Medium</button>
+                    <button class= "song-option" onclick="loadLevel('goldenWind-hard')">Il Vento D'oro - Hard</button>
+                </div>
+
+                <!-- Add option to upload map + song -->
+            </div>
+
+            <div id="options" class="tabcontent">
                 <h2>Options</h2>
                 <div id="options-list">
                     <div id="songvolume">
-                        Song Volume: <div id="song-volume-value">100</div>
+                        <u>Song Volume:</u> <div id="song-volume-value">35</div>
                         <input type="range" min="1" max="100" value="35" class="slider" id="song-volume">
+                    </div>
                     <div id="sfxvolume">
-                        SFX Volume: <div id="sfx-volume-value">100</div>
-                        <input type="range" min="1" max="100" value="35" class="slider" id="sfx-volume">                    </div>
+                        <u>SFX Volume:</u> <div id="sfx-volume-value">35</div>
+                        <input type="range" min="1" max="100" value="35" class="slider" id="sfx-volume">
+                    </div>
+                    <div id="vfx">
+                        <u>Disable VFX:</u><br>
+                        <input type="checkbox" id="vfx-checkbox">
+                    </div>
+                    <div id="autoplay">
+                        <u>Autoplay:</u><br>
+                        <input type="checkbox" id="autoplay-checkbox">
+                    </div>
+                    <div id="timing-display">
+                        <u>Display Hit Timing:</u><br>
+                        <input type="checkbox" id="timing-display-checkbox" checked>
+                    </div>
                 </div>
             </div>
+
+
         </div>
-        <div id="warning">
-            <img alt="Warning!!!" src="./warning.png" height="100" weight="100">
-            <p>Warning: Your device isn't large enough for a proper experience!</p>
-        </div>
-        <iframe title="" id="map" src="./map.txt" style="display: none;"></iframe>
-        <script src="index.js"></script>
+
+        <script src="./scripts/gameUtils.js"></script>
+        <script src="./scripts/model.js"></script>
+        <script src="./scripts/tabMenu.js"></script>
+        <script src="./scripts/sounds.js"></script>
+        <script src="index.js" defer></script>
+        
+        <script>
+            document.getElementById("defaultOpen").click();
+        </script>
     </body>
 </html>
