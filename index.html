@@ -11,11 +11,11 @@
         </script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="A rhythm game for you to play!">
-        <meta name="keywords" content="project, co-op, site, bilal, rhythm, music, wow, beat">
-        <meta name="author" content="Bilal Shahzad">
+        <meta name="keywords" content="project, co-op, site, zach, rhythm, music, wow, beat">
+        <meta name="author" content="Zachary Chan">
         <link rel="icon" type="image/x-icon" href="./icon.ico">
-        <link rel="stylesheet" href="styles.css">
-        <title> Bilal Shahzad | Rhythm Game</title>
+        <link rel="stylesheet" href="style.css">
+        <title>Bilal Shahzad | Rhythm Game</title>
 
     </head>
     <body>
@@ -43,8 +43,8 @@
                 </p>
 
                 <h2> Code: </h2>
-                Written by yours truly, Bilal.
-                <a href="https://github.com/Bilal-Shahzad/Rhythm-Game">GitHub</a>
+                Written by yours truly, Bilal Shahzad.
+                <a href="https://github.com/zach1502/Rhythm-Game-Subject-To-Change">GitHub</a>
             </div>
         </div>
 
@@ -66,7 +66,7 @@
             <button id="stop" onclick="stop()" style="display:none"> Stop </button>
 
             <div id="warning">
-                <img alt="Warning!!!" src="warning" height="100" weight="100">
+                <img alt="Warning!!!" src="./warning.png" height="100" weight="100">
                 <p>Warning: Your device may be too small for a proper experience!</p>
             </div>
             <div id="game-stats">
@@ -108,8 +108,12 @@
                 <h2>Song Select</h2>
 
                 <div id="song-select-window">
-                    <button class= "song-option" onclick="loadLevel('goldenWind-med')">Il Vento D'oro - Medium</button>
-                    <button class= "song-option" onclick="loadLevel('goldenWind-hard')">Il Vento D'oro - Hard</button>
+                    <span>
+                        <button class="song-option goldenWind-med" onclick="loadLevel('goldenWind-med', './songs/Giorno\'s theme.mp3')" id="selected-song">Il Vento D'oro - Medium</button>
+                    </span>
+                    <span>
+                        <button class="song-option goldenWind-hard" onclick="loadLevel('goldenWind-hard', './songs/Giorno\'s theme.mp3')">Il Vento D'oro - Hard</button>
+                    </span>
                 </div>
 
                 <!-- Add option to upload map + song -->
@@ -144,14 +148,18 @@
 
         </div>
 
-        <script src="./scripts/gameUtils.js"></script>
-        <script src="./scripts/model.js"></script>
-        <script src="./scripts/tabMenu.js"></script>
-        <script src="./scripts/sounds.js"></script>
-        <script src="index.js" defer></script>
+        <!-- Map Loading majickx-->
+        <iframe title="" id="goldenWind-hard" src="./maps/goldenWind-hard.txt" style="display: none;"></iframe>
+        <iframe title="" id="goldenWind-med" src="./maps/goldenWind-med.txt" style="display: none;"></iframe>
         
+        <script src="./scripts/gameUtils.js" async></script>
+        <script src="./scripts/modal.js" async></script>
+        <script src="./scripts/tabMenu.js"></script>
+        <script src="./scripts/sounds.js" async></script>
+        <script src="index.js" defer></script>
         <script>
             document.getElementById("defaultOpen").click();
         </script>
+        
     </body>
 </html>

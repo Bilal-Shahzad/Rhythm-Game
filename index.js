@@ -48,7 +48,10 @@ let maxAcc = 0;
 let currAcc = 0;
 let restarting = false;
 let stopping = false;
+let loading = false;
+let playing = false;
 let currentMap = "goldenWind-med"; // default map
+let loadedSong = defaultSongFile; // default song
 
 // Metadata
 let bpm = -1; // Needed for well timed flashes
@@ -130,26 +133,22 @@ window.onload = function(){
     }
 }
 
-function loadLevel(level){
-    // load level
-    switch(level){
-        case "goldenWind-hard":
-            loadMap("goldenWind-hard");
-            loadSong("./songs/Giorno's theme.mp3");
-            console.log("Loaded Golden Wind - hard")
-            currentMap = "goldenWind-hard";
-            break;
-        case "goldenWind-med":
-            loadMap("goldenWind-med");
-            loadSong("./songs/Giorno's theme.mp3");
-            console.log("Loaded Golden Wind - med")
-            currentMap = "goldenWind-med";
-            break;
-        
-        default:
-            console.log("invalid level");
-            break;
+function loadLevel(level, song){
+    if(currentMap == level) return;
+    loading = true;
+
+    loadMap(level);
+    if(loadedSong != song){
+        loadSong(song);
     }
+    console.log(level)
+    currentMap = level;
+
+    // find the selected song 
+    document.getElementById("selected-song").id = "";
+    document.getElementsByClassName(level)[0].id = "selected-song";
+
+    loading = false;
 }
 
 function getElements(){
@@ -277,23 +276,22 @@ async function retry(){
     restarting = true;
 
     document.getElementById("hit-timing").innerHTML = "";
-    song.currentTime = 0;
-    song.pause();
-
+    resetAndPauseSong()
     for(let note of notes){
         note.note.remove();
         delete note;
     }
     notes = [];
+
+    disableButtons();
     start();
 };
 
 async function stop(){
-    restarting = true;
+    stopping = true;
 
     document.getElementById("hit-timing").innerHTML = "";
-    song.currentTime = 0;
-    song.pause();
+    resetAndPauseSong()
 
     for(let note of notes){
         note.note.remove();
@@ -303,11 +301,16 @@ async function stop(){
 
     document.getElementById("hit-timing").innerHTML = "";
     document.getElementById("play").style.display = "block";
+    modalTriggerElement.style.display = "block";
     document.getElementById("retry").style.display = "none";
     document.getElementById("stop").style.display = "none";
+
+    disableButtons();
 }
 
 async function start(){
+    if(loading) return;
+
     // hide start button and warning and how to play
     document.getElementById("play").style.display = "none";
     document.getElementById("warning").style.display = "none";
@@ -344,10 +347,19 @@ async function start(){
     // start the game
     await sleep(1000); 
     song.play();
+
+    if(stopping){
+        stopping = false;
+        resetAndPauseSong()
+        return;
+    }
+
     let vfxOn = false;
     for(let mapNote of map){
-        if(restarting) {
+        if(restarting || stopping) {
             restarting = false;
+            stopping = false;
+            resetAndPauseSong()
             return;
         }
 
@@ -360,8 +372,10 @@ async function start(){
                 // regular note
                 key = mapNote[2];
                 await sleep(time);
-                if (restarting) {
+                if (restarting || stopping) {
                     restarting = false;
+                    stopping = false;
+                    resetAndPauseSong()
                     return;
                 }
                 new Note(key, vfxOn && !vfxBox.checked);
@@ -372,8 +386,10 @@ async function start(){
                 await sleep(time);
                 for(let i = 2; i < mapNote.length; i++){
                     key = mapNote[i];
-                    if (restarting) {
+                    if (restarting || stopping) {
                         restarting = false;
+                        stopping = false;
+                        resetAndPauseSong()
                         return;
                     }
                     new Note(key, vfxOn && !vfxBox.checked);
@@ -385,8 +401,10 @@ async function start(){
                 // mapNote[3] is the key
                 await sleep(time);
                 key = mapNote[2];
-                if (restarting) {
+                if (restarting || stopping) {
                     restarting = false;
+                    stopping = false;
+                    resetAndPauseSong()
                     return;
                 }
                 new Note(key);
@@ -424,6 +442,7 @@ function endOfSong(){
     document.getElementById("play").style.display = "block";
     document.getElementById("retry").style.display = "none";
     document.getElementById("stop").style.display = "none";
+    modalTriggerElement.style.display = "block";
 }
 
 function flash(reciprecalSpeed = 1.0, delayInitialFlash = 1200){
@@ -537,28 +556,28 @@ function calculatePoints(key_pos, note_pos){
         hitTimingElement.classList.add("perfect-colour");
         incrementStat("perfect");
         updateAccuracy(100.0);
-        return 100;
+        return 100; 
     }
     else if(distance <= excellent){
         hitTimingElement.className = "";
         hitTimingElement.classList.add("excellent-colour");
         incrementStat("excellent");
-        updateAccuracy(67.0);
-        return 67;
+        updateAccuracy(75.0);
+        return 75;
     }
     else if(distance < good){
         hitTimingElement.className = "";
         hitTimingElement.classList.add("good-colour");
         incrementStat("good");
-        updateAccuracy(33.0);
-        return 33;
+        updateAccuracy(50.0);
+        return 50;
     }
     else if(distance < bad){
         hitTimingElement.className = "";
         hitTimingElement.classList.add("bad-colour");
         incrementStat("bad");
-        updateAccuracy(16.0);
-        return 16;
+        updateAccuracy(25.0);
+        return 25;
     }
     else{
         hitTimingElement.className = "";
