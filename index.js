@@ -21,11 +21,18 @@ let scoreElement;
 let accuracyElement;
 let comboElement;
 let hitTimingElement;
+let songSelectWindow;
 
 // Modal Elements
 let modalTriggerElement;
 let modalElement;
 let closeModalElement;
+
+// sidebar elements
+let playButtonElement;
+let warningElement;
+let retryButtonElement;
+let stopButtonElement;
 
 // Options
 let songVolumeSlider;
@@ -59,6 +66,21 @@ let bpm = -1; // Needed for well timed flashes
 // data to run
 let flashID = -1;
 let speed = (window.innerHeight / 1.4)*(1/1000);
+
+let songList = [
+    // {
+    //     id: "goldenWind-med",
+    //     songFile: "./songs/Giorno\'s theme.mp3",
+    //     display: "Il Vento D'oro - Medium",
+    //     mapFile: "./maps/goldenWind-med.txt"
+    // },
+    {
+        id: "goldenWind-hard",
+        songFile: "./songs/Giorno\'s theme.mp3",
+        display: "Il Vento D'oro - Hard",
+        mapFile: "./maps/goldenWind-hard.txt"
+    },
+];
 
 let isHold = {
     'd': false,
@@ -126,9 +148,10 @@ window.onload = function(){
         getKeys();
         getElements();
         getOptions();
+        loadSongSelect();
         loadSfx();
-        loadSong(defaultSongFile);
         startBackgroundLoop();
+        loadSong(defaultSongFile);
         loadMap("goldenWind-med");
     }
 }
@@ -157,6 +180,13 @@ function getElements(){
     accuracyElement = document.getElementById("accuracy");
     comboElement = document.getElementById("combo");
     hitTimingElement = document.getElementById("hit-timing");
+
+    playButtonElement = document.getElementById("play");
+    warningElement = document.getElementById("warning");
+    retryButtonElement = document.getElementById("retry");
+    stopButtonElement = document.getElementById("stop");
+
+    songSelectWindow = document.getElementById("song-select-window");
 }
 
 function getOptions(){
@@ -170,6 +200,16 @@ function getOptions(){
     vfxBox = document.getElementById("vfx-checkbox");
     displayHitTimingBox = document.getElementById("timing-display-checkbox");
 
+    // check if local storage is available
+    if(storageAvailable("localStorage")){
+        // get values from local storage
+        songVolumeSlider.value = localStorage.getItem("songVolume");
+        sfxVolumeSlider.value = localStorage.getItem("sfxVolume");
+        autoplayBox.checked = localStorage.getItem("autoplay") == "true";
+        vfxBox.checked = localStorage.getItem("vfx") == "true";
+        displayHitTimingBox.checked = localStorage.getItem("displayHitTiming") == "true";
+    }
+
     // set slider value
     songVolumeOutput.innerHTML = songVolumeSlider.value;
     sfxVolumeOutput.innerHTML = sfxVolumeSlider.value;
@@ -178,6 +218,10 @@ function getOptions(){
     songVolumeSlider.oninput = function(){
         songVolumeOutput.innerHTML = this.value;
         song.volume = this.value / 100;
+
+        if(storageAvailable("localStorage")){
+            localStorage.setItem("songVolume", this.value);
+        }
     }
     
     sfxVolumeSlider.oninput = function(){
@@ -185,6 +229,28 @@ function getOptions(){
         hitSound.volume = this.value / 400; // THESE SOUNDS ARE TOO LOUD
         missSound.volume = this.value / 400;
         applauseSound.volume = this.value / 400;
+
+        if(storageAvailable("localStorage")){
+            localStorage.setItem("sfxVolume", this.value);
+        }
+    }
+
+    autoplayBox.onchange = function(){
+        if(storageAvailable("localStorage")){
+            localStorage.setItem("autoplay", this.checked);
+        }
+    }
+
+    vfxBox.onchange = function(){
+        if(storageAvailable("localStorage")){
+            localStorage.setItem("vfx", this.checked);
+        }
+    }
+    
+    displayHitTimingBox.onchange = function(){
+        if(storageAvailable("localStorage")){
+            localStorage.setItem("displayHitTiming", this.checked);
+        }
     }
 }
 
@@ -257,25 +323,10 @@ function loadMap(mapToLoad){
     }
 }
 
-function createChord(prevNote, key){
-    // create a new list
-    let newNote = [];
-    newNote.push(1); // chord
-    newNote.push(prevNote[1]);
-    
-    // add prev keys
-    for(let i = 2; i < prevNote.length; i++){
-        newNote.push(prevNote[i]);
-    }
-    newNote.push(key);
-
-    return newNote;
-}
-
 async function retry(){
     restarting = true;
 
-    document.getElementById("hit-timing").innerHTML = "";
+    hitTimingElement.innerHTML = "";
     resetAndPauseSong()
     for(let note of notes){
         note.note.remove();
@@ -284,13 +335,15 @@ async function retry(){
     notes = [];
 
     disableButtons();
+    turnOffFlash();
+
     start();
 };
 
 async function stop(){
     stopping = true;
 
-    document.getElementById("hit-timing").innerHTML = "";
+    hitTimingElement.innerHTML = "";
     resetAndPauseSong()
 
     for(let note of notes){
@@ -299,12 +352,13 @@ async function stop(){
     }
     notes = [];
 
-    document.getElementById("hit-timing").innerHTML = "";
-    document.getElementById("play").style.display = "block";
+    hitTimingElement.innerHTML = "";
+    playButtonElement.style.display = "block";
     modalTriggerElement.style.display = "block";
-    document.getElementById("retry").style.display = "none";
-    document.getElementById("stop").style.display = "none";
+    retryButtonElement.style.display = "none";
+    stopButtonElement.style.display = "none";
 
+    turnOffFlash();
     disableButtons();
 }
 
@@ -312,11 +366,11 @@ async function start(){
     if(loading) return;
 
     // hide start button and warning and how to play
-    document.getElementById("play").style.display = "none";
-    document.getElementById("warning").style.display = "none";
+    playButtonElement.style.display = "none";
+    warningElement.style.display = "none";
     modalTriggerElement.style.display = "none";
-    document.getElementById("retry").style.display = "block";
-    document.getElementById("stop").style.display = "block";
+    retryButtonElement.style.display = "block";
+    stopButtonElement.style.display = "block";
 
     // reset combo
     comboElement.innerHTML = 0;
@@ -331,18 +385,22 @@ async function start(){
     // reset accuracy
     maxAcc = 0.0;
     currAcc = 0.0;
-    document.getElementById("accuracy").innerHTML = "00.00";
+    accuracyElement.innerHTML = "00.00";
 
     // reset score
-    document.getElementById("score").innerHTML = "0";
+    scoreElement.innerHTML = "0";
 
     // Remove Key Hints
     removeKeyHints();
 
     // check if autoplay is checked
     if(autoplayBox.checked){
-        setInterval(autoHit, 1);
+        setInterval(autoHit, 5);
     }
+
+    // stop applause
+    applauseSound.pause();
+    applauseSound.currentTime = 0;
 
     // start the game
     await sleep(1000); 
@@ -436,17 +494,18 @@ async function start(){
 function endOfSong(){
     // play applause
     applauseSound.play();
-    document.getElementById("hit-timing").innerHTML = "";
+    hitTimingElement.innerHTML = "";
 
     // show play again button
-    document.getElementById("play").style.display = "block";
-    document.getElementById("retry").style.display = "none";
-    document.getElementById("stop").style.display = "none";
+    playButtonElement.style.display = "block";
+    retryButtonElement.style.display = "none";
+    stopButtonElement.style.display = "none";
     modalTriggerElement.style.display = "block";
+
+    turnOffFlash();
 }
 
 function flash(reciprecalSpeed = 1.0, delayInitialFlash = 1200){
-
     if(flashID != -1) {
         clearInterval(flashID);
         flashID = -1;
@@ -463,31 +522,35 @@ function flash(reciprecalSpeed = 1.0, delayInitialFlash = 1200){
     }, delayInitialFlash);
 }
 
-function hitCheck(key, key_element){
-    const key_pos = key_element.getBoundingClientRect();
+function loadSongSelect(){
+    for(let song of songList){
+        /* 
+            <span>
+                <button class="song-option goldenWind-med" onclick="loadLevel('goldenWind-med', './songs/Giorno\'s theme.mp3')" id="selected-song">Il Vento D'oro - Medium</button>
+            </span>
+        */
 
-    // for all notes, check if the key collides with the note
-    for(let i = 0; i < notes.length; i++){
-        // notes has their elements in the order of old to new
-        let note = notes[i];
-        const note_pos = note.note.getBoundingClientRect();
+        let span = document.createElement("span");
+        let button = document.createElement("button");     
+        
+        button.classList.add("song-option");
+        button.classList.add(song.id);
+        button.innerHTML = song.display;
 
-        // check if the note hit the key
-        if(note.key != key){
-            continue;
+        if (song.id == "goldenWind-med") {
+            button.id = "selected-song";
         }
 
-        if(isInHitZone(key_pos, note_pos)){
-            // remove all references to the note (can be garbage collected)
-            note.note.remove();
-            notes.splice(i, 1);
+        button.setAttribute('onclick', `loadLevel('${song.id}', "${song.songFile}")`);
 
-            // add score
-            handleHit(key_pos, note_pos);
-            hitSound.currentTime = 0;
-            hitSound.play();
-            return;
-        }
+        let iframe = document.createElement("iframe");
+        iframe.id = song.id;
+        iframe.src = song.mapFile;
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+
+        span.appendChild(button);
+        songSelectWindow.appendChild(span);
     }
 }
 
@@ -499,7 +562,7 @@ function autoHit(){
         const note_pos = note.note.getBoundingClientRect();
 
         // check if the note will hit
-        if(Math.abs(note_pos.bottom - dkey.getBoundingClientRect().bottom) < 5.0){
+        if(Math.abs(note_pos.bottom - dkey.getBoundingClientRect().bottom) < 10.0){
             // remove all references to the note (can be garbage collected)
             note.note.remove();
             notes.splice(i, 1);
@@ -510,145 +573,5 @@ function autoHit(){
             hitSound.play();
             return;
         }
-    }
-}
-
-function handleHit(key_pos, note_pos){
-    // add score
-    const points = calculatePoints(key_pos, note_pos);
-    updateScore(points);
-
-    if(points > 0){
-        // add combo
-        incrementStat("combo");
-    }
-    else{
-        // reset combo
-        incrementStat("misses");
-        resetCombo();
-    }
-}
-
-let i = 1;
-function calculatePoints(key_pos, note_pos){
-    // calculate the score based on the distance between the note and the key
-    const hit_zone = note_pos.height * 2;
-    const distance = Math.abs(key_pos.y - note_pos.y);
-
-    const perfect = hit_zone - hit_zone * 0.70;
-    const excellent = hit_zone - hit_zone * 0.50;
-    const good = hit_zone - hit_zone * 0.30;
-    const bad = hit_zone - hit_zone * 0.10;
-    // miss is everything else
-
-    // negative means early, positive means late
-    let timing = (note_pos.y - key_pos.y) / speed;
-    console.log(`note ${i++}: ${timing}`);
-
-    // check if hit timing is enabled
-    if(document.getElementById("timing-display-checkbox").checked){
-        hitTimingElement.innerHTML = `${(timing>0)?"+":""}${timing.toFixed(2)} ms`;
-    }
-
-    // tilted a bit into the player's favor
-    if(distance <= perfect){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("perfect-colour");
-        incrementStat("perfect");
-        updateAccuracy(100.0);
-        return 100; 
-    }
-    else if(distance <= excellent){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("excellent-colour");
-        incrementStat("excellent");
-        updateAccuracy(75.0);
-        return 75;
-    }
-    else if(distance < good){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("good-colour");
-        incrementStat("good");
-        updateAccuracy(50.0);
-        return 50;
-    }
-    else if(distance < bad){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("bad-colour");
-        incrementStat("bad");
-        updateAccuracy(25.0);
-        return 25;
-    }
-    else{
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("miss-colour");
-        incrementStat("misses");
-        updateAccuracy(0.0);
-        return 0;
-    }
-}
-
-// on key press
-function keyUpHandler(e){
-    switch(e.key){
-        case 'd':
-            setBrightness(dkey, 100);
-            popElement(dkey, 1.0);
-            isHold['d'] = false;
-            break;
-        case 'f':
-            setBrightness(fkey, 100);
-            popElement(fkey, 1.0);
-            isHold['f'] = false;
-            break;
-        case 'j':
-            setBrightness(jkey, 100);
-            popElement(jkey, 1.0);
-            isHold['j'] = false;
-            break;
-        case 'k':
-            setBrightness(kkey, 100);
-            popElement(kkey, 1.0);
-            isHold['k'] = false;
-            break;
-        default:
-            break;
-    }
-}
-
-function keyDownHandler(e){
-    switch(e.key){
-        case 'd':
-            isHold['d'] = true;
-            setBrightness(dkey, 50);
-            popElement(dkey, 1.1);
-            hitCheck(e.key, dkey);
-            break;
-        case 'f':
-            isHold['f'] = true;
-            setBrightness(fkey, 50);
-            popElement(fkey, 1.1);
-            hitCheck(e.key, fkey);
-            break;
-        case 'j':
-            isHold['j'] = true;
-            setBrightness(jkey, 50);
-            popElement(jkey, 1.1);
-            hitCheck(e.key, jkey);
-            break;
-        case 'k':
-            isHold['k'] = true;
-            setBrightness(kkey, 50);
-            popElement(kkey, 1.1);
-            hitCheck(e.key, kkey);
-            break;
-        case ";":
-            // spawn random note
-            const keys = ["d", "f", "j", "k"];
-            new Note(keys[Math.floor(Math.random() * keys.length)]);
-            break;
-        default:
-
-            break;
     }
 }

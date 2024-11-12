@@ -1,654 +1,289 @@
-// rhythm game
+html {
+    overflow-y: hidden;
+}
+body {
+    font-family: monospace, serif;
+    color: #fff;
+    background-color: #444;
+}
+button {
+    margin-left: auto;
+    margin-right: auto;
+    font-family: monospace, serif;
+    background-color: #555;
+    color: #fff;
+    font-size: 32pt;
+    margin-bottom: 16pt;
+    border: #333 1px solid;
+}
+button:hover {
+    background-color: #999;
+}
 
-// key refs
-let dkey;
-let fkey;
-let jkey;
-let kkey;
+h1{
+    font-size: 32pt;
+    margin-bottom: 16pt;
+}
+h2{
+    font-size: 18pt;
+    margin-bottom: 16pt;
+}
+a {
+    color: #fff;
+}
 
-let notes = []; // list of notes on screen
+#side-panel {
+    text-align: center;
+    margin-left: 60%;
+    margin-top: 5%;
+    height: 100%;
+    background-color: #444;
+}
 
-// Audio
-const defaultSongFile = "./songs/Giorno's theme.mp3";
-let song;
-let hitSound;
-let missSound;
-let applauseSound;
+#game-area{
+    background-color: #333;
+    width: 60%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    transition: all 300ms linear 0ms;
+}
 
-// Needed Document Elements
-let gameAreaElement;
-let scoreElement;
-let accuracyElement;
-let comboElement;
-let hitTimingElement;
+.d, .f, .j, .k {
+    /* rectangle inside of game area*/
+    background-color: #fff;
+    width: 150px;
+    height: 50px;
+    position: absolute;
+    top: 80%;
 
-// Modal Elements
-let modalTriggerElement;
-let modalElement;
-let closeModalElement;
+    /* animation */
+    transition: all 50ms linear 0ms;
+    filter: brightness(100%);
+    transform: scale(1);
 
-// Options
-let songVolumeSlider;
-let songVolumeOutput;
-let sfxVolumeSlider;
-let sfxVolumeOutput;
-let autoplayBox;
-let autoplayOutput;
-let vfxBox;
-let vfxOutput;
-let displayHitTimingBox;
-let displayHitTimingOutput;
+    /* text */
+    font-size: 32pt;
+    text-align: center;
+    font-weight: bold;
+    line-height: 50px;
+    color: rgb(148, 148, 148);
+}
 
-// the map
-let map = [];
- 
-// game state
-let combo = 0;
-let maxAcc = 0;
-let currAcc = 0;
-let restarting = false;
-let stopping = false;
-let loading = false;
-let playing = false;
-let currentMap = "goldenWind-med"; // default map
-let loadedSong = defaultSongFile; // default song
+.d {
+    left: 20%;
+    margin-left: -75px;
+    background-color: purple;
+}
+.f {
+    left: 40%;
+    margin-left: -75px;
+    background-color: cyan;
+}
+.j {
+    left: 60%;
+    margin-left: -75px;
+    background-color: greenyellow;
+}
+.k {
+    left: 80%;
+    margin-left: -75px;
+    background-color: rgb(255, 50, 50);
+}
 
-// Metadata
-let bpm = -1; // Needed for well timed flashes
+.note {
+    /* this determines the speed of the note */
+    animation: note 1400ms linear;
+    transition: note 1400ms linear;
+    position: absolute;
+    z-index: -1;
+    top: 100%
+}
 
-// data to run
-let flashID = -1;
-let speed = (window.innerHeight / 1.4)*(1/1000);
-
-let isHold = {
-    'd': false,
-    'f': false,
-    'j': false,
-    'k': false
-};
-
-let expectedHold = {
-    'd': false,
-    'f': false,
-    'j': false,
-    'k': false
-};
-
-// generic Note Class
-class Note{
-    /*
-     * @param {string} key - key to check
-     */
-    constructor(key, bonus = false){
-        this.key = key;
-
-        // create the note
-        this.note = document.createElement("div");
-        gameAreaElement.appendChild(this.note);
-        this.note.classList.add(key);
-
-        // move note to the same position as the key
-        switch(key){
-            case "d":
-                this.note.style.left = dkey.style.left;
-                break;
-            case "f":
-                this.note.style.left = fkey.style.left;
-                break;
-            case "j":
-                this.note.style.left = jkey.style.left;
-                break;
-            case "k":
-                this.note.style.left = kkey.style.left;
-                break;
-            default:
-                console.log("invalid key");
-                // delete the note
-                this.note.remove();
-                delete this;
-                break;
-        }
-
-        // apply animation
-        this.note.classList.add("note"); // in css
-        if(bonus) this.note.classList.add("bonus");
-        notes.push(this);
+@keyframes note {
+    from {
+        top: 0;
+    }
+    to {
+        top: 100%;
     }
 }
 
-// on page load
-window.onload = function(){
-    // check for readyState
-    if(document.readyState == "complete"){
-        // initialize game
-        launchModal();
-        attachEventHandlers();
-        getKeys();
-        getElements();
-        getOptions();
-        loadSfx();
-        loadSong(defaultSongFile);
-        startBackgroundLoop();
-        loadMap("goldenWind-med");
+.bonus {
+    background: linear-gradient(
+        60deg,
+        rgba(255, 0, 0, 1) 0%,
+        rgba(255, 154, 0, 1) 10%,
+        rgba(208, 222, 33, 1) 20%,
+        rgba(79, 220, 74, 1) 30%,
+        rgba(63, 218, 216, 1) 40%,
+        rgba(47, 201, 226, 1) 50%,
+        rgba(28, 127, 238, 1) 60%,
+        rgba(95, 21, 242, 1) 70%,
+        rgba(186, 12, 248, 1) 80%,
+        rgba(251, 7, 217, 1) 90%,
+        rgba(255, 0, 0, 1) 100%
+    );
+}
+
+#score, #combo, #accuracy, #misses, #bad, #good, #excellent, #perfect {
+    display: inline;
+}
+
+#game-stats {
+    font-size: 20pt;
+}
+#hit-stats {
+    font-size: 20pt;
+    margin-bottom: 21.33px;
+}
+#perfect-stat {
+    color: rgb(20, 214, 20);
+}
+#excellent-stat {
+    color: greenyellow;
+}
+#good-stat {
+    color: yellow;
+}
+#bad-stat {
+    color: orange;
+}
+#misses-stat {
+    color: rgb(254, 97, 97);
+}
+
+.perfect-colour {
+    color: rgb(20, 214, 20);
+}
+.excellent-colour {
+    color: greenyellow;
+}
+.good-colour {
+    color: yellow;
+}
+.bad-colour {
+    color: orange;
+}
+.miss-colour {
+    color: rgb(254, 97, 97);
+}
+
+#hit-timing {
+    position: absolute;
+    width: 300px;
+    height: 100px;
+    text-align: center;
+    font-size: 32pt;
+
+    transition: all 100ms ease-out 0ms;
+    top: 60%;
+    left: 50%;
+    margin-left: -150px;
+}
+
+@media screen and (max-width: 1250px) and (min-height: 840px) {
+    #warning {
+        display: block;
+    }
+}
+@media screen and (min-width: 1250px) {
+    #warning {
+        display: none;
     }
 }
 
-function loadLevel(level, song){
-    if(currentMap == level) return;
-    loading = true;
-
-    loadMap(level);
-    if(loadedSong != song){
-        loadSong(song);
-    }
-    console.log(level)
-    currentMap = level;
-
-    // find the selected song 
-    document.getElementById("selected-song").id = "";
-    document.getElementsByClassName(level)[0].id = "selected-song";
-
-    loading = false;
+.modal {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.1);
+    transition: visibility 0s linear 0.25s, opacity 0.25s 0s, transform 0.25s;
+    z-index: 2;
 }
 
-function getElements(){
-    gameAreaElement = document.getElementById("game-area");
-    scoreElement = document.getElementById("score");
-    accuracyElement = document.getElementById("accuracy");
-    comboElement = document.getElementById("combo");
-    hitTimingElement = document.getElementById("hit-timing");
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #444;
+    padding: 1rem 1.5rem;
+    width: 550px;
+    border-radius: 0.5rem;
+    z-index: 2;
 }
 
-function getOptions(){
-    // get slider elements
-    songVolumeSlider = document.getElementById("song-volume");
-    songVolumeOutput = document.getElementById("song-volume-value");
-    sfxVolumeSlider = document.getElementById("sfx-volume");
-    sfxVolumeOutput = document.getElementById("sfx-volume-value");
-
-    autoplayBox = document.getElementById("autoplay-checkbox");
-    vfxBox = document.getElementById("vfx-checkbox");
-    displayHitTimingBox = document.getElementById("timing-display-checkbox");
-
-    // set slider value
-    songVolumeOutput.innerHTML = songVolumeSlider.value;
-    sfxVolumeOutput.innerHTML = sfxVolumeSlider.value;
-
-    // attach listeners
-    songVolumeSlider.oninput = function(){
-        songVolumeOutput.innerHTML = this.value;
-        song.volume = this.value / 100;
-    }
-    
-    sfxVolumeSlider.oninput = function(){
-        sfxVolumeOutput.innerHTML = this.value;
-        hitSound.volume = this.value / 400; // THESE SOUNDS ARE TOO LOUD
-        missSound.volume = this.value / 400;
-        applauseSound.volume = this.value / 400;
-    }
+.close-button {
+    float: right;
+    width: 2rem;
+    line-height: 2rem;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    background-color: #333;
 }
 
-function loadMap(mapToLoad){
-    // clear map
-    map = [];
-    
-    // load from iframe
-    let map_text = document.getElementById(mapToLoad).contentDocument.body.innerText;
-    let lines = map_text.split("\n");
-
-    // parse lines
-    // each line contains a time and a key
-    // the previous' line's time minus the current line's time is the time to wait
-    // id = special id for notes 
-    // 0: regular notes
-    // 1: hold notes (maybe)
-    // 2: tbd ... 
-
-    let prev_time = -1;
-    for(let line of lines){
-        line = line.trim();
-        if(line == "") continue; // ignore empty lines
-        if(line[0] == "/" && line[1] == "/") continue; // comment
-
-        const tokens = line.split(" ");
-
-        let type = tokens[0];
-        let time = parseInt(tokens[1]);
-        let key = tokens[2];
-
-        let wait = time - prev_time;
-        switch(type){
-            case "note":
-                // auto create chord
-                if(wait === 0){
-                    let prevNote = map.pop();
-                    let newNote = createChord(prevNote, key);
-                    newNote[0] = 1; // chord
-        
-                    map.push(newNote);
-                }
-                else{
-                    map.push([0, wait, key]);
-                }
-                break;
-            case "hold":
-                let length = tokens[3];
-                // hold notes are just regular notes but a function will check every so often if the key is still held
-                map.push([2, wait, key, length]);
-                break;
-            case "effect":
-                map.push([4]);
-                continue; // don't want to effect timing
-            case "flash":
-                map.push([5, tokens[1], tokens[2]]);
-                continue; 
-            case "bpm":
-                bpm = parseInt(tokens[1]);
-                continue;
-            case "end":
-                map.push([99]);
-                break;
-            default:
-                console.log("invalid type");
-                break;
-        }
-
-        prev_time = time;
-    }
+.close-button:hover {
+    background-color: darkgray;
 }
 
-function createChord(prevNote, key){
-    // create a new list
-    let newNote = [];
-    newNote.push(1); // chord
-    newNote.push(prevNote[1]);
-    
-    // add prev keys
-    for(let i = 2; i < prevNote.length; i++){
-        newNote.push(prevNote[i]);
-    }
-    newNote.push(key);
-
-    return newNote;
+.show-modal {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1.0);
+    transition: visibility 0s linear 0s, opacity 0.25s 0s, transform 0.25s;
+}
+.htp-trigger {
+    font-size: 20pt;
 }
 
-async function retry(){
-    restarting = true;
-
-    document.getElementById("hit-timing").innerHTML = "";
-    resetAndPauseSong()
-    for(let note of notes){
-        note.note.remove();
-        delete note;
-    }
-    notes = [];
-
-    disableButtons();
-    start();
-};
-
-async function stop(){
-    stopping = true;
-
-    document.getElementById("hit-timing").innerHTML = "";
-    resetAndPauseSong()
-
-    for(let note of notes){
-        note.note.remove();
-        delete note;
-    }
-    notes = [];
-
-    document.getElementById("hit-timing").innerHTML = "";
-    document.getElementById("play").style.display = "block";
-    modalTriggerElement.style.display = "block";
-    document.getElementById("retry").style.display = "none";
-    document.getElementById("stop").style.display = "none";
-
-    disableButtons();
+.tabcontent {
+    animation: fadeEffect 200ms;
 }
 
-async function start(){
-    if(loading) return;
-
-    // hide start button and warning and how to play
-    document.getElementById("play").style.display = "none";
-    document.getElementById("warning").style.display = "none";
-    modalTriggerElement.style.display = "none";
-    document.getElementById("retry").style.display = "block";
-    document.getElementById("stop").style.display = "block";
-
-    // reset combo
-    comboElement.innerHTML = 0;
-
-    // reset stats
-    zeroStat("misses");
-    zeroStat("perfect");
-    zeroStat("excellent");
-    zeroStat("good");
-    zeroStat("bad");
-
-    // reset accuracy
-    maxAcc = 0.0;
-    currAcc = 0.0;
-    document.getElementById("accuracy").innerHTML = "00.00";
-
-    // reset score
-    document.getElementById("score").innerHTML = "0";
-
-    // Remove Key Hints
-    removeKeyHints();
-
-    // check if autoplay is checked
-    if(autoplayBox.checked){
-        setInterval(autoHit, 1);
-    }
-
-    // start the game
-    await sleep(1000); 
-    song.play();
-
-    if(stopping){
-        stopping = false;
-        resetAndPauseSong()
-        return;
-    }
-
-    let vfxOn = false;
-    for(let mapNote of map){
-        if(restarting || stopping) {
-            restarting = false;
-            stopping = false;
-            resetAndPauseSong()
-            return;
-        }
-
-        const id = mapNote[0];
-        const time = mapNote[1];
-        let key = "";
-
-        switch(id){
-            case 0:
-                // regular note
-                key = mapNote[2];
-                await sleep(time);
-                if (restarting || stopping) {
-                    restarting = false;
-                    stopping = false;
-                    resetAndPauseSong()
-                    return;
-                }
-                new Note(key, vfxOn && !vfxBox.checked);
-                break;
-            case 1:
-                // chord
-                // mapNote[2] to mapNote[n] are keys
-                await sleep(time);
-                for(let i = 2; i < mapNote.length; i++){
-                    key = mapNote[i];
-                    if (restarting || stopping) {
-                        restarting = false;
-                        stopping = false;
-                        resetAndPauseSong()
-                        return;
-                    }
-                    new Note(key, vfxOn && !vfxBox.checked);
-                }
-                break;
-            case 2:
-                // hold
-                // mapNote[2] is the length of hold
-                // mapNote[3] is the key
-                await sleep(time);
-                key = mapNote[2];
-                if (restarting || stopping) {
-                    restarting = false;
-                    stopping = false;
-                    resetAndPauseSong()
-                    return;
-                }
-                new Note(key);
-                break;
-            case 3:
-                // hold chord
-                break;
-            case 4:
-                // toggle rainbow notes
-                vfxOn = !vfxOn;
-                break;
-            case 5:
-                // toggle game area colour
-                if(vfxBox.checked) continue;
-                flash(mapNote[1], mapNote[2]);
-                break;
-            case 99:
-                // execute end of song stuff
-                await sleep(1600);
-                endOfSong();
-                return;
-            default:
-                // do nothing
-                break;
-        }
-    }
+.tablinks {
+    background-color: #555;
+    color: white;
+    float: left;
+    outline: none;
+    cursor: pointer;
+    padding-top: 10pt;
+    padding-bottom: 10pt;
+    font-size: 18pt;
+    width: 50%;
+    border: rgb(51, 51, 51) 1px solid;
 }
 
-function endOfSong(){
-    // play applause
-    applauseSound.play();
-    document.getElementById("hit-timing").innerHTML = "";
-
-    // show play again button
-    document.getElementById("play").style.display = "block";
-    document.getElementById("retry").style.display = "none";
-    document.getElementById("stop").style.display = "none";
-    modalTriggerElement.style.display = "block";
+#song-select-window {
+    overflow-y: auto;
+    height: 30vh;
 }
 
-function flash(reciprecalSpeed = 1.0, delayInitialFlash = 1200){
-
-    if(flashID != -1) {
-        clearInterval(flashID);
-        flashID = -1;
-        return;
-    }
-
-    setTimeout(function(){
-        flashID = setInterval(function(){
-            gameAreaElement.style.backgroundColor = "#555";
-            setTimeout(function(){
-                gameAreaElement.style.backgroundColor = "#333";
-            }, 100);
-        }, ((60 * 1000)/bpm) * reciprecalSpeed);
-    }, delayInitialFlash);
+#options-list{
+    overflow-y: auto;
+    height: 30vh;
 }
 
-function hitCheck(key, key_element){
-    const key_pos = key_element.getBoundingClientRect();
-
-    // for all notes, check if the key collides with the note
-    for(let i = 0; i < notes.length; i++){
-        // notes has their elements in the order of old to new
-        let note = notes[i];
-        const note_pos = note.note.getBoundingClientRect();
-
-        // check if the note hit the key
-        if(note.key != key){
-            continue;
-        }
-
-        if(isInHitZone(key_pos, note_pos)){
-            // remove all references to the note (can be garbage collected)
-            note.note.remove();
-            notes.splice(i, 1);
-
-            // add score
-            handleHit(key_pos, note_pos);
-            hitSound.currentTime = 0;
-            hitSound.play();
-            return;
-        }
-    }
+.song-option {
+    width: 100%;
+    margin: 0px;
+    font-size: 30px;
+    text-align: center;
 }
 
-function autoHit(){
-    // for all notes, check if the key collides with the note
-    for(let i = 0; i < notes.length; i++){
-        // notes has their elements in the order of old to new
-        let note = notes[i];
-        const note_pos = note.note.getBoundingClientRect();
-
-        // check if the note will hit
-        if(Math.abs(note_pos.bottom - dkey.getBoundingClientRect().bottom) < 5.0){
-            // remove all references to the note (can be garbage collected)
-            note.note.remove();
-            notes.splice(i, 1);
-
-            // add score
-            handleHit(dkey.getBoundingClientRect(), note_pos);
-            hitSound.currentTime = 0;
-            hitSound.play();
-            return;
-        }
-    }
+#selected-song {
+    background-color: #777;
 }
 
-function handleHit(key_pos, note_pos){
-    // add score
-    const points = calculatePoints(key_pos, note_pos);
-    updateScore(points);
-
-    if(points > 0){
-        // add combo
-        incrementStat("combo");
-    }
-    else{
-        // reset combo
-        incrementStat("misses");
-        resetCombo();
-    }
-}
-
-let i = 1;
-function calculatePoints(key_pos, note_pos){
-    // calculate the score based on the distance between the note and the key
-    const hit_zone = note_pos.height * 2;
-    const distance = Math.abs(key_pos.y - note_pos.y);
-
-    const perfect = hit_zone - hit_zone * 0.70;
-    const excellent = hit_zone - hit_zone * 0.50;
-    const good = hit_zone - hit_zone * 0.30;
-    const bad = hit_zone - hit_zone * 0.10;
-    // miss is everything else
-
-    // negative means early, positive means late
-    let timing = (note_pos.y - key_pos.y) / speed;
-    console.log(`note ${i++}: ${timing}`);
-
-    // check if hit timing is enabled
-    if(document.getElementById("timing-display-checkbox").checked){
-        hitTimingElement.innerHTML = `${(timing>0)?"+":""}${timing.toFixed(2)} ms`;
-    }
-
-    // tilted a bit into the player's favor
-    if(distance <= perfect){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("perfect-colour");
-        incrementStat("perfect");
-        updateAccuracy(100.0);
-        return 100; 
-    }
-    else if(distance <= excellent){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("excellent-colour");
-        incrementStat("excellent");
-        updateAccuracy(75.0);
-        return 75;
-    }
-    else if(distance < good){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("good-colour");
-        incrementStat("good");
-        updateAccuracy(50.0);
-        return 50;
-    }
-    else if(distance < bad){
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("bad-colour");
-        incrementStat("bad");
-        updateAccuracy(25.0);
-        return 25;
-    }
-    else{
-        hitTimingElement.className = "";
-        hitTimingElement.classList.add("miss-colour");
-        incrementStat("misses");
-        updateAccuracy(0.0);
-        return 0;
-    }
-}
-
-// on key press
-function keyUpHandler(e){
-    switch(e.key){
-        case 'd':
-            setBrightness(dkey, 100);
-            popElement(dkey, 1.0);
-            isHold['d'] = false;
-            break;
-        case 'f':
-            setBrightness(fkey, 100);
-            popElement(fkey, 1.0);
-            isHold['f'] = false;
-            break;
-        case 'j':
-            setBrightness(jkey, 100);
-            popElement(jkey, 1.0);
-            isHold['j'] = false;
-            break;
-        case 'k':
-            setBrightness(kkey, 100);
-            popElement(kkey, 1.0);
-            isHold['k'] = false;
-            break;
-        default:
-            break;
-    }
-}
-
-function keyDownHandler(e){
-    switch(e.key){
-        case 'd':
-            isHold['d'] = true;
-            setBrightness(dkey, 50);
-            popElement(dkey, 1.1);
-            hitCheck(e.key, dkey);
-            break;
-        case 'f':
-            isHold['f'] = true;
-            setBrightness(fkey, 50);
-            popElement(fkey, 1.1);
-            hitCheck(e.key, fkey);
-            break;
-        case 'j':
-            isHold['j'] = true;
-            setBrightness(jkey, 50);
-            popElement(jkey, 1.1);
-            hitCheck(e.key, jkey);
-            break;
-        case 'k':
-            isHold['k'] = true;
-            setBrightness(kkey, 50);
-            popElement(kkey, 1.1);
-            hitCheck(e.key, kkey);
-            break;
-        case ";":
-            // spawn random note
-            const keys = ["d", "f", "j", "k"];
-            new Note(keys[Math.floor(Math.random() * keys.length)]);
-            break;
-        default:
-
-            break;
-    }
+@keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
 }
