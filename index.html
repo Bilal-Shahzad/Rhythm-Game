@@ -11,8 +11,8 @@
         </script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="A rhythm game for you to play!">
-        <meta name="keywords" content="project, co-op, site, zach, rhythm, music, wow, beat">
-        <meta name="author" content="Zachary Chan">
+        <meta name="keywords" content="project, co-op, site, bilal, rhythm, music, wow, beat">
+        <meta name="author" content="Bilal Shahzad">
         <link rel="icon" type="image/x-icon" href="./icon.ico">
         <link rel="stylesheet" href="style.css">
         <title>Bilal Shahzad | Rhythm Game</title>
@@ -44,16 +44,20 @@
 
                 <h2> Code: </h2>
                 Written by yours truly, Bilal Shahzad.
-                <a href="https://github.com/zach1502/Rhythm-Game-Subject-To-Change">GitHub</a>
+                <a href="https://github.com/Bilal-Shahzad/Rhythm-Game">GitHub</a>
             </div>
         </div>
 
         <div id="game-area">
             <div id="hit-timing"></div>
-            <div class="d" style="filter: brightness(100%); transform: scale(1.0);"> D </div>
-            <div class="f" style="filter: brightness(100%); transform: scale(1.0);"> F </div>
-            <div class="j" style="filter: brightness(100%); transform: scale(1.0);"> J </div>
-            <div class="k" style="filter: brightness(100%); transform: scale(1.0);"> K </div>
+            <div id="keys">
+                <div></div>
+                <div class="d" style="filter: brightness(100%); transform: scale(1.0);"> D </div>
+                <div class="f" style="filter: brightness(100%); transform: scale(1.0);"> F </div>
+                <div class="j" style="filter: brightness(100%); transform: scale(1.0);"> J </div>
+                <div class="k" style="filter: brightness(100%); transform: scale(1.0);"> K </div>
+                <div></div>
+            </div>
         </div>
         <div id="side-panel">
             <h1>
@@ -98,7 +102,6 @@
                     Misses: <div id="misses">0</div>
                 </span>
             </div>
-
             <div class="tab">
                 <button class="tablinks" onclick="openTab(event, 'song-select')" id="defaultOpen">Song Select</button>
                 <button class="tablinks" onclick="openTab(event, 'options')">Options</button>
@@ -108,11 +111,9 @@
                 <h2>Song Select</h2>
 
                 <div id="song-select-window">
+                    <!-- Default Song preloaded-->
                     <span>
-                        <button class="song-option goldenWind-med" onclick="loadLevel('goldenWind-med', './songs/Giorno\'s theme.mp3')" id="selected-song">Il Vento D'oro - Medium</button>
-                    </span>
-                    <span>
-                        <button class="song-option goldenWind-hard" onclick="loadLevel('goldenWind-hard', './songs/Giorno\'s theme.mp3')">Il Vento D'oro - Hard</button>
+                        <button class="song-option goldenWind-med" id="selected-song" onclick="loadLevel('goldenWind-med', './songs/Giorno\'s theme.mp3')">Il Vento D'oro - Medium</button>
                     </span>
                 </div>
 
@@ -148,10 +149,6 @@
 
         </div>
 
-        <!-- Map Loading majickx-->
-        <iframe title="" id="goldenWind-hard" src="./maps/goldenWind-hard.txt" style="display: none;"></iframe>
-        <iframe title="" id="goldenWind-med" src="./maps/goldenWind-med.txt" style="display: none;"></iframe>
-        
         <script src="./scripts/gameUtils.js" async></script>
         <script src="./scripts/modal.js" async></script>
         <script src="./scripts/tabMenu.js"></script>
@@ -160,6 +157,7 @@
         <script>
             document.getElementById("defaultOpen").click();
         </script>
+        <iframe id="goldenWind-med" src="./maps/goldenWind-med.txt" style="display: none;"></iframe>
         
     </body>
 </html>
